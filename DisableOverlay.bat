@@ -1,24 +1,40 @@
 @echo off
-:: Check for administrative privileges
+:: Check for Administrator privileges
 net session >nul 2>&1
-if %errorLevel% neq 0 (
-    echo Error: Please run this script as an Administrator.
+if %errorLevel% == 0 (
+    echo [OK] Running with Administrator privileges.
+) else (
+    echo [ERROR] Please run this script as an Administrator!
     pause
     exit /b
 )
 
-title Game Bar Removal Tool
-echo --------------------------------------------------
-echo Disabling Windows Gaming Overlay...
-echo --------------------------------------------------
+echo Applying ms-gamebar and ms-gamingoverlay registry fixes...
 
-:: 1. Disable Game DVR and Game Bar in Registry
-echo Modifying Registry keys...
-reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\GameDVR" /v "AppCaptureEnabled" /t REG_DWORD /d 0 /f >nul
-reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\GameDVR" /v "HistoricalCaptureEnabled" /t REG_DWORD /d 0 /f >nul
-reg add "HKCU\System\GameConfigStore" /v "GameDVR_Enabled" /t REG_DWORD /d 0 /f >nul
-reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\GameDVR" /v "AllowGameDVR" /t REG_DWORD /d 0 /f >nul
+:: Fix for ms-gamebar protocol
+reg add "HKCR\ms-gamebar" /f /ve /d "URL:ms-gamebar"
+reg add "HKCR\ms-gamebar" /f /v "URL Protocol" /d " "
+reg add "HKCR\ms-gamebar" /f /v "NoOpenWith" /d " "
+reg add "HKCR\ms-gamebar\shell\open\command" /f /ve /d "%SystemRoot%\System32\systray.exe"
 
-:: 2. Stop and Disable Gaming Services
-echo Stopping background services...
-powershell -Command "Get-Service -Name 'GamingServices*' -ErrorAction SilentlyContinue | Stop-Service -Force" >
+:: Fix for ms-gamebarservices protocol
+reg add "HKCR\ms-gamebarservices" /f /ve /d "URL:ms-gamebarservices"
+reg add "HKCR\ms-gamebarservices" /f /v "URL Protocol" /d " "
+reg add "HKCR\ms-gamebarservices" /f /v "NoOpenWith" /d " "
+reg add "HKCR\ms-gamebarservices\shell\open\command" /f /ve /d "%SystemRoot%\System32\systray.exe"
+
+:: Fix for ms-gamingoverlay protocol
+reg add "HKCR\ms-gamingoverlay" /f /ve /d "URL:ms-gamingoverlay"
+reg add "HKCR\ms-gamingoverlay" /f /v "URL Protocol" /d " "
+reg add "HKCR\ms-gamingoverlay" /f /v "NoOpenWith" /d " "
+reg add "HKCR\ms-gamingoverlay\shell\open\command" /f /ve /d "%SystemRoot%\System32\systray.exe"
+
+:: Disable Game DVR features (Ankh's suggestion)
+echo Disabling GameDVR and App Capture...
+reg add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\GameDVR" /f /t REG_DWORD /v "AppCaptureEnabled" /d 0
+reg add "HKEY_CURRENT_USER\System\GameConfigStore" /f /t REG_DWORD /v "GameDVR_Enabled" /d 0
+
+echo.
+echo All fixes applied successfully! 
+echo You may need to restart your computer for changes to take full effect.
+pause
